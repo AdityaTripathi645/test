@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Competition Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            animation: rainbow 3s linear infinite;
+        }
+        
+        @keyframes rainbow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .timer {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(255,107,107,0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .quiz-section, .leaderboard-section, .admin-section {
+            display: none;
+        }
+        
+        .quiz-section.active, .leaderboard-section.active, .admin-section.active {
+            display: block;
+        }
+        
+        .question-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .question-text {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.2);
+        }
+        
+        .option.selected {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+        }
+        
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(102,126,234,0.4);
+        }
+        
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .leaderboard {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.3s ease;
+        }
+        
+        .leaderboard-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .rank {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 20px;
+            min-width: 30px;
+        }
+        
+        .player-info {
+            flex: 1;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .player-score {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .score {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        
+        .warning-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            animation: modalPop 0.3s ease;
+        }
+        
+        @keyframes modalPop {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .warning-icon {
+            font-size: 3rem;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button.active, .tab-button:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .results-table th, .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .results-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .cheating-warning {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Quiz Competition</h1>
+            <div class="timer" id="timer">Time: 10:00</div>
+        </div>
+        
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="showSection('quiz')">Quiz</button>
+            <button class="tab-button" onclick="showSection('leaderboard')">Leaderboard</button>
+            <button class="tab-button" onclick="showSection('admin')">Admin</button>
+        </div>
+        
+        <!-- Quiz Section -->
+        <div class="quiz-section active" id="quiz-section">
+            <div class="form-group" id="name-input" style="margin-bottom: 20px;">
+                <label for="playerName">Enter Your Name:</label>
+                <input type="text" id="playerName" placeholder="Your name here..." />
+                <button class="button" onclick="startQuiz()" style="margin-top: 10px;">Start Quiz</button>
+            </div>
+            
+            <div id="quiz-content" style="display: none;">
+                <div class="cheating-warning" id="cheating-warning" style="display: none;">
+                    ⚠️ Tab switching detected! Next violation will auto-submit the quiz.
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress" id="progress" style="width: 0%;"></div>
+                </div>
+                
+                <div class="question-card" id="question-card">
+                    <div class="question-text" id="question-text"></div>
+                    <div class="options" id="options"></div>
+                </div>
+                
+                <div class="nav-buttons">
+                    <button class="button" id="prev-btn" onclick="previousQuestion()" disabled>Previous</button>
+                    <button class="button" id="next-btn" onclick="nextQuestion()">Next</button>
+                    <button class="button" id="submit-btn" onclick="submitQuiz()" style="display: none;">Submit Quiz</button>
+                </div>
+            </div>
+            
+            <div id="results" style="display: none;">
+                <h2>Quiz Results</h2>
+                <div id="score-display"></div>
+                <button class="button" onclick="resetQuiz()">Take Quiz Again</button>
+            </div>
+        </div>
+        
+        <!-- Leaderboard Section -->
+        <div class="leaderboard-section" id="leaderboard-section">
+            <h2>🏆 Leaderboard</h2>
+            <div class="leaderboard" id="leaderboard"></div>
+        </div>
+        
+        <!-- Admin Section -->
+        <div class="admin-section" id="admin-section">
+            <h2>Admin Panel</h2>
+            <button class="button" onclick="exportResults()" style="margin-bottom: 20px;">Export Results</button>
+            <table class="results-table" id="results-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Time Taken</th>
+                        <th>Tab Switches</th>
+                        <th>Cheating Detected</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="results-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Configuration
+        const QUIZ_DURATION = 600; // 10 minutes in seconds
+        const questions = [
+            {
+                question: "Generics in java are implemented using?",
+                options: ["Code specialization", "Type erasure", "Template expansion", "Reflection only"],
+                correct: 2
+            },
+            {
+                question: "Which planet is known as the Red Planet?",
+                options: ["Venus", "Mars", "Jupiter", "Saturn"],
+                correct: 1
+            },
+            {
+                question: "What is 2 + 2?",
+                options: ["3", "4", "5", "6"],
+                correct: 1
+            },
+            {
+                question: "Who painted the Mona Lisa?",
+                options: ["Vincent van Gogh", "Leonardo da Vinci", "Pablo Picasso", "Michelangelo"],
+                correct: 1
+            },
+            {
+                question: "What is the largest ocean on Earth?",
+                options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
+                correct: 3
+            },
+            {
+                question: "In which year did World War II end?",
+                options: ["1944", "1945", "1946", "1947"],
+                correct: 1
+            },
+            {
+                question: "What is the chemical symbol for gold?",
+                options: ["Go", "Gd", "Au", "Ag"],
+                correct: 2
+            },
+            {
+                question: "Which is the smallest country in the world?",
+                options: ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
+                correct: 1
+            }
+        ];
+
+        // Game State
+        let gameState = {
+            currentPlayer: '',
+            currentQuestionIndex: 0,
+            answers: [],
+            startTime: null,
+            endTime: null,
+            timeRemaining: QUIZ_DURATION,
+            timerInterval: null,
+            tabSwitchCount: 0,
+            cheatingDetected: false,
+            warningShown: false,
+            quizActive: false
+        };
+
+        // Anti-cheating measures
+        let tabSwitchWarning = false;
+        
+        // Detect tab switching
+        document.addEventListener('visibilitychange', function() {
+            if (gameState.quizActive && document.hidden) {
+                gameState.tabSwitchCount++;
+                
+                if (!gameState.warningShown) {
+                    showCheatingWarning();
+                    gameState.warningShown = true;
+                } else {
+                    // Second violation - auto submit
+                    gameState.cheatingDetected = true;
+                    autoSubmitQuiz();
+                }
+            }
+        });
+
+        // Detect window focus loss
+        window.addEventListener('blur', function() {
+            if (gameState.quizActive) {
+                gameState.tabSwitchCount++;
+                if (gameState.warningShown) {
+                    gameState.cheatingDetected = true;
+                    autoSubmitQuiz();
+                } else {
+                    showCheatingWarning();
+                    gameState.warningShown = true;
+                }
+            }
+        });
+
+        // Disable right-click and common keyboard shortcuts
+        document.addEventListener('contextmenu', function(e) {
+            if (gameState.quizActive) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (gameState.quizActive) {
+                // Disable F12, Ctrl+Shift+I, Ctrl+U, etc.
+                if (e.key === 'F12' || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                    (e.ctrlKey && e.key === 'u') ||
+                    (e.ctrlKey && e.shiftKey && e.key === 'C')) {
+                    e.preventDefault();
+                }
+            }
+        });
+
+        function showCheatingWarning() {
+            document.getElementById('cheating-warning').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('cheating-warning').style.display = 'none';
+            }, 5000);
+        }
+
+        function autoSubmitQuiz() {
+            alert('Quiz auto-submitted due to suspicious activity (tab switching detected)!');
+            submitQuiz();
+        }
+
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.quiz-section, .leaderboard-section, .admin-section').forEach(s => {
+                s.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected section and activate tab
+            document.getElementById(section + '-section').classList.add('active');
+            event.target.classList.add('active');
+            
+            if (section === 'leaderboard') {
+                updateLeaderboard();
+            } else if (section === 'admin') {
+                updateAdminPanel();
+            }
+        }
+
+        function startQuiz() {
+            const playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('Please enter your name!');
+                return;
+            }
+            
+            gameState.currentPlayer = playerName;
+            gameState.startTime = new Date();
+            gameState.quizActive = true;
+            
+            document.getElementById('name-input').style.display = 'none';
+            document.getElementById('quiz-content').style.display = 'block';
+            
+            startTimer();
+            displayQuestion();
+        }
+
+        function startTimer() {
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeRemaining--;
+                updateTimerDisplay();
+                
+                if (gameState.timeRemaining <= 0) {
+                    autoSubmitQuiz();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.timeRemaining / 60);
+            const seconds = gameState.timeRemaining % 60;
+            document.getElementById('timer').textContent = 
+                `Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function displayQuestion() {
+            const question = questions[gameState.currentQuestionIndex];
+            document.getElementById('question-text').textContent = 
+                `${gameState.currentQuestionIndex + 1}. ${question.question}`;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectOption(index);
+                
+                if (gameState.answers[gameState.currentQuestionIndex] === index) {
+                    optionElement.classList.add('selected');
+                }
+                
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            updateProgress();
+            updateNavigationButtons();
+        }
+
+        function selectOption(optionIndex) {
+            gameState.answers[gameState.currentQuestionIndex] = optionIndex;
+            
+            // Update visual selection
+            document.querySelectorAll('.option').forEach((opt, index) => {
+                opt.classList.toggle('selected', index === optionIndex);
+            });
+        }
+
+        function updateProgress() {
+            const progress = ((gameState.currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function updateNavigationButtons() {
+            document.getElementById('prev-btn').disabled = gameState.currentQuestionIndex === 0;
+            
+            if (gameState.currentQuestionIndex === questions.length - 1) {
+                document.getElementById('next-btn').style.display = 'none';
+                document.getElementById('submit-btn').style.display = 'inline-block';
+            } else {
+                document.getElementById('next-btn').style.display = 'inline-block';
+                document.getElementById('submit-btn').style.display = 'none';
+            }
+        }
+
+        function nextQuestion() {
+            if (gameState.currentQuestionIndex < questions.length - 1) {
+                gameState.currentQuestionIndex++;
+                displayQuestion();
+            }
+        }
+
+        function previousQuestion() {
+            if (gameState.currentQuestionIndex > 0) {
+                gameState.currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        function submitQuiz() {
+            gameState.quizActive = false;
+            gameState.endTime = new Date();
+            
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            const score = calculateScore();
+            const timeTaken = Math.floor((gameState.endTime - gameState.startTime) / 1000);
+            
+            // Save result
+            saveResult({
+                name: gameState.currentPlayer,
+                score: score,
+                totalQuestions: questions.length,
+                timeTaken: timeTaken,
+                tabSwitches: gameState.tabSwitchCount,
+                cheatingDetected: gameState.cheatingDetected,
+                timestamp: gameState.endTime.toISOString()
+            });
+            
+            // Show results
+            showResults(score, timeTaken);
+        }
+
+        function calculateScore() {
+            let correct = 0;
+            questions.forEach((question, index) => {
+                if (gameState.answers[index] === question.correct) {
+                    correct++;
+                }
+            });
+            return correct;
+        }
+
+        function showResults(score, timeTaken) {
+            document.getElementById('quiz-content').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            
+            const percentage = Math.round((score / questions.length) * 100);
+            const minutes = Math.floor(timeTaken / 60);
+            const seconds = timeTaken % 60;
+            
+            let resultHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">📊 Your Results</h3>
+                    <div style="font-size: 2rem; margin-bottom: 15px;">
+                        ${score}/${questions.length} (${percentage}%)
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        ⏰ Time taken: ${minutes}:${seconds.toString().padStart(2, '0')}
+                    </div>
+            `;
+            
+            if (gameState.tabSwitchCount > 0) {
+                resultHTML += `
+                    <div style="color: #e74c3c; margin-top: 10px;">
+                        ⚠️ Tab switches detected: ${gameState.tabSwitchCount}
+                    </div>
+                `;
+            }
+            
+            if (gameState.cheatingDetected) {
+                resultHTML += `
+                    <div style="color: #e74c3c; font-weight: bold; margin-top: 10px;">
+                        🚫 Quiz auto-submitted due to suspicious activity
+                    </div>
+                `;
+            }
+            
+            resultHTML += '</div>';
+            
+            document.getElementById('score-display').innerHTML = resultHTML;
+        }
+
+        function resetQuiz() {
+            gameState = {
+                currentPlayer: '',
+                currentQuestionIndex: 0,
+                answers: [],
+                startTime: null,
+                endTime: null,
+                timeRemaining: QUIZ_DURATION,
+                timerInterval: null,
+                tabSwitchCount: 0,
+                cheatingDetected: false,
+                warningShown: false,
+                quizActive: false
+            };
+            
+            document.getElementById('playerName').value = '';
+            document.getElementById('name-input').style.display = 'block';
+            document.getElementById('quiz-content').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('timer').textContent = 'Time: 10:00';
+        }
+
+        function saveResult(result) {
+            let results = JSON.parse(localStorage.getItem('quizResults') || '[]');
+            results.push(result);
+            results.sort((a, b) => {
+                if (a.score !== b.score) return b.score - a.score;
+                return a.timeTaken - b.timeTaken;
+            });
+            localStorage.setItem('quizResults', JSON.stringify(results));
+        }
+
+        function updateLeaderboard() {
+            const results = JSON.parse(localStorage.getItem('quizResults') || '[]');
+            const leaderboard = document.getElementById('leaderboard');
+            
+            if (results.length === 0) {
+                leaderboard.innerHTML = '<p style="text-align: center; padding: 20px;">No results yet!</p>';
+                return;
+            }
+            
+            let html = '';
+            results.slice(0, 10).forEach((result, index) => {
+                const percentage = Math.round((result.score / result.totalQuestions) * 100);
+                const minutes = Math.floor(result.timeTaken / 60);
+                const seconds = result.timeTaken % 60;
+                
+                html += `
+                    <div class="leaderboard-item">
+                        <div class="rank">${index + 1}</div>
+                        <div class="player-info">
+                            <div class="player-name">${result.name}</div>
+                            <div class="player-score">
+                                Time: ${minutes}:${seconds.toString().padStart(2, '0')}
+                                ${result.cheatingDetected ? ' ⚠️' : ''}
+                            </div>
+                        </div>
+                        <div class="score">${result.score}/${result.totalQuestions} (${percentage}%)</div>
+                    </div>
+                `;
+            });
+            
+            leaderboard.innerHTML = html;
+        }
+
+        function updateAdminPanel() {
+            const results = JSON.parse(localStorage.getItem('quizResults') || '[]');
+            const tbody = document.getElementById('results-tbody');
+            
+            let html = '';
+            results.forEach(result => {
+                const date = new Date(result.timestamp);
+                const minutes = Math.floor(result.timeTaken / 60);
+                const seconds = result.timeTaken % 60;
+                
+                html += `
+                    <tr>
+                        <td>${result.name}</td>
+                        <td>${result.score}/${result.totalQuestions}</td>
+                        <td>${minutes}:${seconds.toString().padStart(2, '0')}</td>
+                        <td>${result.tabSwitches}</td>
+                        <td>${result.cheatingDetected ? '❌ Yes' : '✅ No'}</td>
+                        <td>${date.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function exportResults() {
+            const results = JSON.parse(localStorage.getItem('quizResults') || '[]');
+            
+            let csv = 'Name,Score,Total Questions,Percentage,Time Taken (seconds),Tab Switches,Cheating Detected,Timestamp\n';
+            results.forEach(result => {
+                const percentage = Math.round((result.score / result.totalQuestions) * 100);
+                csv += `"${result.name}",${result.score},${result.totalQuestions},${percentage}%,${result.timeTaken},${result.tabSwitches},${result.cheatingDetected},${result.timestamp}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quiz_results_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Initialize
+        updateTimerDisplay();
+    </script>
+</body>
+</html>
